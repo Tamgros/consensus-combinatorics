@@ -21,12 +21,13 @@ def run_shred(max_runs=max_runs, sufficient_percent_seen=1/3):
     node_indexes = np.arange(num_nodes)
     for i in range(max_runs):
 
-        # 33% of the time the lvl0 reciever is malicious
-        # I had to turn this off becuase max shreds was getting exceeded
+        # to account for 33% of the time the lvl0 reciever is malicious
+
         # if random.random() <= 1/3:
         #     continue
+        # NOTE: I had to turn this off becuase max shreds was getting exceeded
 
-        # simple shuffleing:
+        # simple shuffleing steps:
         # 1 shuffle the deck
         # 2 pick the first lvl0_nodes and your lvl0
         # 3 hack off the next indexes by lvl1_nodes_per_group amount
@@ -70,16 +71,16 @@ def run_shred(max_runs=max_runs, sufficient_percent_seen=1/3):
             si += 1
 
         # The logic here is that what we care about is the max packets anyone
-        # has seen in a case that's still bad. That way we can be assured if
-        # we see packets above that maximum, then rest of the state are
-        # definitely good states.
-
-        # Realistically all we need to do is check the last shred before we
-        # hit the stop condition, but checking it time is just not as efficient
+        # has seen in a case that's less than the required amount of the network
+        # has seen enough packets. That way we can be assured if
+        # we see packets above that maximum, then we know the network is in
+        # a good state
 
         if s[si-1][0] > stop_condition:
             return max_count, i, s
         else:
+            # Realistically all we need to do is check the last shred before we
+            # hit the stop condition, but checking it time is just not as efficient
             max_count = max(
                 max(counts_of_nodes_total_observed.elements()), max_count)
 
@@ -103,7 +104,6 @@ max(maxes, key=lambda x: x[0])
 
 # This gives a rough distribution
 collect = collections.Counter([m[0] for m in maxes])
-collect
-sorted(collect.items(), key=lambda x: x[0])
+print(sorted(collect.items(), key=lambda x: x[0]))
 
 # TODO: any failure cases where the number of shreds exceeded 96?
