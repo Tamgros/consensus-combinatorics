@@ -9,7 +9,7 @@ lvl0_nodes = 200
 lvl1_nodes_per_group = 200
 num_groups = int(np.ceil(num_nodes/200))
 
-stop_condition = 36
+stop_condition = 32
 
 
 max_runs = 96
@@ -91,7 +91,7 @@ def run_shred(max_runs=max_runs, sufficient_percent_seen=1/3):
 
 # Run a bunch of sims
 maxes = []
-for i in range(100000):
+for i in range(10000):
     maxes.append(run_shred())
 
 # look at the max of those sims to see the worst case
