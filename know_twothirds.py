@@ -15,10 +15,16 @@ stop_condition = 32
 max_runs = 96
 
 
-def run_shred(max_runs=max_runs, sufficient_percent_seen=1/3):
+def run_shred(max_runs=max_runs, sufficient_percent_seen=1/3, static_bad=True):
     max_count = 0
     observed = np.zeros(num_nodes)
     node_indexes = np.arange(num_nodes)
+
+    bad_nodes = np.random.choice(node_indexes,
+                                 int(np.ceil(num_nodes*fail_rate)),
+                                 replace=False)
+    bad_nodes = set(bad_nodes)
+
     for i in range(max_runs):
 
         # to account for 33% of the time the lvl0 reciever is malicious
@@ -45,12 +51,22 @@ def run_shred(max_runs=max_runs, sufficient_percent_seen=1/3):
         # lvl0 reciever transmitted, then lvl0 all see it
         observed[lvl0] += 1
 
-        # this tracks the indexes of the groups in lvl1 that were transmitted to
-        seen = np.random.choice(lvl1_groups, num_groups*2//3, replace=False)
-
         # count all those who were transmitted to in this shred
-        for s in seen:
-            observed[s] += 1
+
+        if static_bad:
+            for i, node_lvl0 in enumerate(lvl0):
+                if i >= len(lvl1_groups):
+                    break
+
+                if node_lvl0 not in bad_nodes:
+                    observed[lvl1_groups[i]] += 1
+
+        else:
+            # this tracks the indexes of the groups in lvl1 that were transmitted to
+            good_lvl0s = np.random.choice(
+                lvl1_groups, num_groups*2//3, replace=False)
+            for s in good_lvl0s:
+                observed[s] += 1
 
         # this just pythonically counts how many packets are recieved across
         # all shreds
@@ -66,9 +82,9 @@ def run_shred(max_runs=max_runs, sufficient_percent_seen=1/3):
         sufficient_seen = sum(counts_of_nodes_total_observed.values()) \
             * sufficient_percent_seen
 
-        while cum < sufficient_seen:
-            cum += s[si][1]
-            si += 1
+        # while cum < sufficient_seen:
+        #     cum += s[si][1]
+        #     si += 1
 
         # The logic here is that what we care about is the max packets anyone
         # has seen in a case that's less than the required amount of the network
@@ -76,7 +92,8 @@ def run_shred(max_runs=max_runs, sufficient_percent_seen=1/3):
         # we see packets above that maximum, then we know the network is in
         # a good state
 
-        if s[si-1][0] > stop_condition:
+        # if s[si-1][0] > stop_condition:
+        if min(counts_of_nodes_total_observed.elements()) > stop_condition:
             return max_count, i, s
         else:
             # Realistically all we need to do is check the last shred before we
@@ -91,8 +108,9 @@ def run_shred(max_runs=max_runs, sufficient_percent_seen=1/3):
 
 # Run a bunch of sims
 maxes = []
-for i in range(10000):
+for i in range(3000):
     maxes.append(run_shred())
+len(maxes)
 
 # look at the max of those sims to see the worst case
 # index 0 is the max_counts
@@ -107,3 +125,11 @@ collect = collections.Counter([m[0] for m in maxes])
 print(sorted(collect.items(), key=lambda x: x[0]))
 
 # TODO: any failure cases where the number of shreds exceeded 96?
+
+
+node_indexes = np.arange(num_nodes)
+
+bad_nodes = np.random.choice(node_indexes,
+                             int(np.ceil(num_nodes*fail_rate)),
+                             replace=False)
+bad_nodes
